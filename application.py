@@ -117,9 +117,29 @@ def insert_data_into_db(payload):
     NOTE: Our autograder will automatically insert data into the DB automatically keeping in mind the explained SCHEMA, you dont have to insert your own data.
     """
     create_db_table()
-    # TODO: Implement the database call    
+    # Get the connection
+    connection = get_db_connection() 
     
-    raise NotImplementedError("Database insert function not implemented.")
+    try:
+        with connection.cursor() as cursor:
+            sql = """
+                INSERT INTO events (title, description, image_url, date, location) 
+                VALUES (%s, %s, %s, %s, %s)
+            """
+            # Use .get() to prevent KeyErrors if a field is missing
+            values = (
+                payload.get('title'), 
+                payload.get('description', ''), 
+                payload.get('image_url', ''), 
+                payload.get('date'), 
+                payload.get('location', '')
+            )
+            cursor.execute(sql, values)
+        
+        connection.commit()
+    finally:
+        # Close the connection to prevent memory leaks!
+        connection.close()
 
 #Database Function Stub
 def fetch_data_from_db():
@@ -127,9 +147,18 @@ def fetch_data_from_db():
     Stub for database communication.
     Implement this function to fetch your data from the database.
     """
-    # TODO: Implement the database call
+    # Get the connection
+    connection = get_db_connection()
     
-    raise NotImplementedError("Database fetch function not implemented.")
+    try:
+        with connection.cursor(pymysql.cursors.DictCursor) as cursor:
+            sql = "SELECT * FROM events ORDER BY date ASC"
+            cursor.execute(sql)
+            results = cursor.fetchall()
+            return results
+    finally:
+        # Close the connection
+        connection.close()
 
 if __name__ == '__main__':
     application.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
